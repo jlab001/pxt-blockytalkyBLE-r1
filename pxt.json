@@ -1,7 +1,7 @@
 {
-    "name": "ServoDriver",
-    "version": "0.1.0",
-    "description": "Package for Servo controlling modukle",
+    "name": "pxt-blockytalkyBLE",
+    "version": "0.6.0",
+    "description": "blockytalkyBLE",
     "license": "MIT",
     "dependencies": {
         "core": "*"
