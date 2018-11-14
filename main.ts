@@ -1,120 +1,88 @@
-/* The MIT License (MIT)
+//% color=#0062dB weight=96 icon="\uf294" block="BlockyTalky BLE"
+namespace blockyTalkyBLE {
+    let delimiter = "^";
+    let terminator = "#";
+    let handlers: LinkedKeyHandlerList = null;
 
-Copyright (c) 2017 Riven
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of
-this software and associated documentation files (the "Software"), to deal in
-the Software without restriction, including without limitation the rights to
-use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
-the Software, and to permit persons to whom the Software is furnished to do so,
-subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all
-copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
-FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
-COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
-IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
-CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE. */
-
-
-//% color="#ff7300" weight=10 icon="\uf110"
-namespace ServoDriver {
-    const PCA9685_ADDRESS = 0x40
-    const MODE1 = 0x00
-    const LED0_ON_L = 0x06
-    const PRESCALE = 0xFE
-
-    let initialized = false
-
-    export enum Servos {
-        C0 = 0x00,
-        C1 = 0x01,
-        C2 = 0x02,
-        C3 = 0x03,
-        C4 = 0x04,
-        C5 = 0x05,
-        C6 = 0x06,
-        C7 = 0x07,
-        C8 = 0x08,
-        C9 = 0x09,
-        C10 = 0x0A,
-        C11 = 0x0B,
-        C12 = 0x0C,
-        C13 = 0x0D,
-        C14 = 0x0E,
-        C15 = 0x0F,
+    class LinkedKeyHandlerList {
+        key: string;
+        type: ValueTypeIndicator;
+        callback: (value: TypeContainer) => void;
+        next: LinkedKeyHandlerList
     }
 
+    enum ValueTypeIndicator { String, Number }
 
-    function i2cwrite(addr: number, reg: number, value: number) {
-        let buf = pins.createBuffer(2)
-        buf[0] = reg
-        buf[1] = value
-        pins.i2cWriteBuffer(addr, buf)
+    export class TypeContainer {
+        stringValue: string;
+        numberValue: number;
     }
 
-    function i2ccmd(addr: number, value: number) {
-        let buf = pins.createBuffer(1)
-        buf[0] = value
-        pins.i2cWriteBuffer(addr, buf)
+    let messageContainer = new TypeContainer;
+
+ 
+    //% blockId=blockyTalkyBLE_send_string_key_value block="send string|key %key|value %value"
+    export function sendMessageWithStringValue(key: string, value: string): void {
+        sendRawMessage(key, ValueTypeIndicator.String, value)
     }
 
-    function i2cread(addr: number, reg: number) {
-        pins.i2cWriteNumber(addr, reg, NumberFormat.UInt8BE);
-        let val = pins.i2cReadNumber(addr, NumberFormat.UInt8BE);
-        return val;
+    //% blockId=blockyTalkyBLE_send_number_key_value block="send number|key %key|value %value"
+    export function sendMessageWithNumberValue(key: string, value: number): void {
+        sendRawMessage(key, ValueTypeIndicator.Number, value.toString())
     }
 
-    function initPCA9685(): void {
-        i2cwrite(PCA9685_ADDRESS, MODE1, 0x00)
-        setFreq(50);
-        initialized = true
+    function sendRawMessage(key: string, valueTypeIndicator: ValueTypeIndicator, value: string): void {
+        let indicatorAsString = getStringForValueTypeIndicator(valueTypeIndicator);
+        bluetooth.uartWriteString(indicatorAsString + delimiter + key + delimiter + value + terminator)
     }
 
-    function setFreq(freq: number): void {
-        // Constrain the frequency
-        let prescaleval = 25000000;
-        prescaleval /= 4096;
-        prescaleval /= freq;
-        prescaleval -= 1;
-        let prescale = prescaleval; //Math.Floor(prescaleval + 0.5);
-        let oldmode = i2cread(PCA9685_ADDRESS, MODE1);
-        let newmode = (oldmode & 0x7F) | 0x10; // sleep
-        i2cwrite(PCA9685_ADDRESS, MODE1, newmode); // go to sleep
-        i2cwrite(PCA9685_ADDRESS, PRESCALE, prescale); // set the prescaler
-        i2cwrite(PCA9685_ADDRESS, MODE1, oldmode);
-        control.waitMicros(5000);
-        i2cwrite(PCA9685_ADDRESS, MODE1, oldmode | 0xa1);
-    }
+    let splitString = (splitOnChar: string, input: string) => {
+        let result: string[] = []
+        let count = 0
+        let startIndex = 0
+        for (let index = 0; index < input.length; index++) {
+            if (input.charAt(index) == splitOnChar) {
+                result[count] = input.substr(startIndex, index - startIndex)
 
-    function setPwm(channel: number, on: number, off: number): void {
-        if (channel < 0 || channel > 15)
-            return;
-
-        let buf = pins.createBuffer(5);
-        buf[0] = LED0_ON_L + 4 * channel;
-        buf[1] = on & 0xff;
-        buf[2] = (on >> 8) & 0xff;
-        buf[3] = off & 0xff;
-        buf[4] = (off >> 8) & 0xff;
-        pins.i2cWriteBuffer(PCA9685_ADDRESS, buf);
-    }
-
-    //% blockId=Servo_Driver block="servo write pin |%index| to %degree"
-    //% weight=100
-    //% blockGap=50
-    //% degree.min=0 degree.max=180
-    //% name.fieldEditor="gridpicker" name.fieldOptions.columns=8
-    export function Servo(index: Servos, degree: number): void {
-        if (!initialized) {
-            initPCA9685()
+                startIndex = index + 1
+                count = count + 1
+            }
         }
-        // 50hz: 20,000 us
-        let v_us = (degree * 1800 / 180 + 600) // 0.6 ~ 2.4
-        let value = v_us * 4096 / 20000
-        setPwm(index, 0, value)
+        result[count] = input.substr(startIndex, input.length - startIndex)
+
+        return result;
     }
-}
+
+    /**
+     * Get string representation of enum.
+     */
+    function getStringForValueTypeIndicator(vti: ValueTypeIndicator) {
+        switch (vti) {
+            case ValueTypeIndicator.Number:
+                return "N"
+            case ValueTypeIndicator.String:
+                return "S"
+            default:
+                return "!"
+        }
+    }
+
+    /**
+     * Get enum representation of string.
+     */
+    function getValueTypeIndicatorForString(typeString: string) {
+        switch (typeString) {
+            case "S":
+                return ValueTypeIndicator.String
+            case "N":
+                return ValueTypeIndicator.Number
+            default:
+                return null
+        }
+    }
+
+
+
+    bluetooth.startUartService()
+    
+} 
