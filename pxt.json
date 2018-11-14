@@ -1,11 +1,11 @@
+
 {
     "name": "pxt-blockytalkyBLE",
-    "version": "0.6.0",
-    "description": "blockytalkyBLE",
+    "version": "0.1.0",
+    "description": "blockyTalkyBLE",
     "license": "MIT",
     "dependencies": {
-        "core": "*",
-        "bluetooth": "*"
+        "core": "*"
     },
     "files": [
         "README.md",
@@ -14,15 +14,5 @@
     "testFiles": [
         "test.ts"
     ],
-        "yotta": {
-        "optionalConfig": {
-            "microbit-dal": {
-                "bluetooth": {
-                    "open": 1,
-                    "whitelist": 0
-                }
-            }
-        }
-    },
     "public": true
 }
