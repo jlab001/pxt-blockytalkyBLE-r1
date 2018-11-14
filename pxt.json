@@ -5,7 +5,7 @@
     "description": "blockyTalkyBLE",
     "license": "MIT",
     "dependencies": {
-                        "core": "*",
+        "core": "*",
         "bluetooth": "*"
     },
     "files": [
