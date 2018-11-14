@@ -1,5 +1,5 @@
-# ServoDriver
-Package for ServoDriver
+# BlockyTalkyBLE
+Blocky Talky
 
 ## Basic usage
 Use the block to control the servos
