@@ -2,40 +2,23 @@
 namespace blockyTalkyBLE {
     let delimiter = "^";
     let terminator = "#";
-    let handlers: LinkedKeyHandlerList = null;
-
-    class LinkedKeyHandlerList {
-        key: string;
-        type: ValueTypeIndicator;
-        callback: (value: TypeContainer) => void;
-        next: LinkedKeyHandlerList
-    }
-
     enum ValueTypeIndicator { String, Number }
-
     export class TypeContainer {
         stringValue: string;
         numberValue: number;
     }
-
-    let messageContainer = new TypeContainer;
-
- 
     //% blockId=blockyTalkyBLE_send_string_key_value block="send string|key %key|value %value"
     export function sendMessageWithStringValue(key: string, value: string): void {
         sendRawMessage(key, ValueTypeIndicator.String, value)
     }
-
     //% blockId=blockyTalkyBLE_send_number_key_value block="send number|key %key|value %value"
     export function sendMessageWithNumberValue(key: string, value: number): void {
         sendRawMessage(key, ValueTypeIndicator.Number, value.toString())
     }
-
     function sendRawMessage(key: string, valueTypeIndicator: ValueTypeIndicator, value: string): void {
         let indicatorAsString = getStringForValueTypeIndicator(valueTypeIndicator);
         bluetooth.uartWriteString(indicatorAsString + delimiter + key + delimiter + value + terminator)
     }
-
     let splitString = (splitOnChar: string, input: string) => {
         let result: string[] = []
         let count = 0
@@ -49,13 +32,9 @@ namespace blockyTalkyBLE {
             }
         }
         result[count] = input.substr(startIndex, input.length - startIndex)
-
         return result;
     }
-
-    /**
-     * Get string representation of enum.
-     */
+     // Get string representation of enum.
     function getStringForValueTypeIndicator(vti: ValueTypeIndicator) {
         switch (vti) {
             case ValueTypeIndicator.Number:
@@ -66,11 +45,8 @@ namespace blockyTalkyBLE {
                 return "!"
         }
     }
-
-    /**
-     * Get enum representation of string.
-     */
-    function getValueTypeIndicatorForString(typeString: string) {
+     // Get enum representation of string.
+     function getValueTypeIndicatorForString(typeString: string) {
         switch (typeString) {
             case "S":
                 return ValueTypeIndicator.String
@@ -80,9 +56,5 @@ namespace blockyTalkyBLE {
                 return null
         }
     }
-
-
-
     bluetooth.startUartService()
-    
 } 
